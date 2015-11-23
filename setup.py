@@ -13,7 +13,7 @@ with open(path.join(here, 'LICENSE.txt'), encoding='utf-8') as f:
 
 metadata = {\
     'name'              : 'Google2Pandas',
-    'version'           : '0.0.101a1',
+    'version'           : '0.1.0',
     'author'            : 'Matt S.',
     'author_email'      : 'sales@panalysis.com',
     'maintainer'        : 'Matt S.',
@@ -21,7 +21,7 @@ metadata = {\
     'url'               : 'https://github.com/panalysis-gpl/Google2Pandas',
     'description'       : 'Google2Pandas',
     'long_description'  : long_description,
-    'classifiers'       : ['Development Status :: 3 - Alpha', \
+    'classifiers'       : ['Development Status :: 4 - Beta', \
                            'Programming Language :: Python', \
                            'Programming Language :: Python :: 2', \
                            'Programming Language :: Python :: 2.7', \
