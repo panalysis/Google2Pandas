@@ -1,0 +1,25 @@
+Google2Pandas -- A simple module to make a query to Google Analytics and
+have the result returned as a pandas.DataFrame object.
+Copyright (C) 2015  Panalysis Pty Ltd
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+For enquiries contact the authors at:
+
+Panalysis Pty Ltd
+Suite 4, Level 8
+213 Miller St, North Sydney
+Australia, 2060
+
+sales@panalysis.com
