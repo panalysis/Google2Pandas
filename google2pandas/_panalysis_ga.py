@@ -282,6 +282,10 @@ class GoogleAnalyticsQuery(OAuthDataReader):
         # 2. 'ga:' prefixing
         # Ensure that all fields that should be in the form 'ga:XXXX' acutally are.
         # Error handling skipped at this location intentionally.
+        #
+        # First sneak in fix to allow providing ids as int value
+        query['ids'] = str(query['ids'])
+        
         names = 'ids', 'dimensions', 'metrics'
         lst = query['ids'], query['dimensions'], query['metrics']
         [self._maybe_add_arg(query, n, d) for n, d in zip(names, lst)]
