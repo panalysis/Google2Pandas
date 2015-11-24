@@ -18,7 +18,7 @@ from google2pandas import *
 Install the latest version via pip:
 
 ```
-sudo pip install git+https://github.com/DeliciousHair/Google2Pandas
+sudo pip install git+https://github.com/panalysis/Google2Pandas
 ```
 
 You will first need to enable the Analytics API, in particular you will
