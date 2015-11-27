@@ -221,7 +221,7 @@ class GoogleAnalyticsQuery(OAuthDataReader):
                 elif x == u'BOOLEAN':
                     return bool
                 else:
-                    return str
+                    return unicode
                 
             for hdr in res[u'columnHeaders']:
                 col = hdr[u'name'][3:]
