@@ -4,8 +4,8 @@ Google2Pandas will eventually be a set of tools that will allow for easy queryin
 of various google database products (Analytics, BigQuery, etc.) with the results
 returned as pandas.DataFrame objects (http://pandas.pydata.org/).
 
-At this point, only queries to Google Analytics and the Multi-Channel Funnels Reporting via
-+the core reporting API are supported.
+At this point, only queries to Google Analytics via the core reporting API are
+supported.
 
 ##Nomenclature##
 Suggested usage: 
@@ -46,5 +46,5 @@ query = {\
     'max_results'   : 10}
     
 ga = GoogleAnalyticsQuery(token_file_name='analytics.dat')
-df, formatted_qry, sampling_info = ga.execute_query(**query)
+df, formatted_qry = ga.execute_query(**query)
 ```
