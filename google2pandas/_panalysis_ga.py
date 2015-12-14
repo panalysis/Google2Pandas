@@ -1,5 +1,3 @@
-#!/usr/bin/env/python
-
 from __future__ import division
 
 from googleapiclient.discovery import build
@@ -190,8 +188,7 @@ class GoogleAnalyticsQuery(OAuthDataReader):
         Returns:
         -----------
             reuslt : pd.DataFrame or dict
-            query  : a copy of the (formatted) query actually used
-            sampling : summay of sampling data if result contains sampled data
+            metadata : summary data supplied with query result
         '''
         try:
             formatted_query = QueryParser().parse(**query)
@@ -243,12 +240,11 @@ class GoogleAnalyticsQuery(OAuthDataReader):
                 
                 df[col] = df[col].apply(my_mapper(dtp))
                 
-            # Get the summary info returned
-            metadata = res.copy()
-            metadata.pop('rows')
-            metadata.pop('columnHeaders')
-                
-            return df, metadata
+            # Return the summary info as well
+            res.pop('rows')
+            res.pop('columnHeaders')
+            
+            return df, res
         
         
 class GoogleMCFQuery(OAuthDataReader):
@@ -327,8 +323,7 @@ class GoogleMCFQuery(OAuthDataReader):
         Returns:
         -----------
             reuslt : pd.DataFrame or dict
-            query  : a copy of the (formatted) query actually used
-            sampling : summay of sampling data if result contains sampled data
+            metadata : summary data supplied with query result
         '''
         try:
             formatted_query = QueryParser(prefix=u'mcf:').parse(**query)
@@ -378,9 +373,8 @@ class GoogleMCFQuery(OAuthDataReader):
                 
                 df[col] = df[col].apply(my_mapper(dtp))
                 
-            # Get the summary info returned
-            metadata = res.copy()
-            metadata.pop('rows')
-            metadata.pop('columnHeaders')
+            # Return the summary info as well
+            res.pop('rows')
+            res.pop('columnHeaders')
             
-            return df, metadata
+            return df, res
