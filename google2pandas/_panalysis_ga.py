@@ -252,8 +252,9 @@ class GoogleAnalyticsQuery(OAuthDataReader):
                             temp_res = self._service.data().ga().get(**temp_qry).execute()
                             temp_df =  pd.DataFrame(temp_res['rows'], columns=cols)
                             
-                            res['nextLink'] = temp_res['nextLink']
                             df = pd.concat((df, temp_df), ignore_index=True)
+                            
+                            res['nextLink'] = temp_res['nextLink']
                             
                         except KeyError:
                             more = False
@@ -286,8 +287,8 @@ class GoogleAnalyticsQuery(OAuthDataReader):
             res.pop('columnHeaders')
             
             return df, res
-        
-        
+
+
 class GoogleMCFQuery(OAuthDataReader):
     def __init__(self, scope=default_scope, token_file_name=default_token_file,
                  redirect=no_callback, secrets=default_secrets):
@@ -390,8 +391,8 @@ class GoogleMCFQuery(OAuthDataReader):
             
             try:
                 df = pd.DataFrame(np.array(\
-                        [i.values() for row in res['rows'] for i in row]).reshape(rows, len(cols)),
-                            index=np.arange(rows), columns=cols)
+                        [i.values() for row in res['rows'] for i in row]).\
+                            reshape(rows, len(cols)), columns=cols)
                 
             except KeyError:
                 df = pd.DataFrame(columns=cols)

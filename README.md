@@ -1,11 +1,11 @@
 #README#
 
 Google2Pandas will eventually be a set of tools that will allow for easy querying
-of various google database products (Analytics, BigQuery, etc.) with the results
-returned as pandas.DataFrame objects (http://pandas.pydata.org/).
+of various google database products (Analytics, etc.) with the results returned as 
+pandas.DataFrame objects (http://pandas.pydata.org/).
 
 At this point, only queries to Google Analytics and the Multi-Channel Funnels Reporting via
-+the core reporting API are supported.
+the core reporting API are supported.
 
 ##Nomenclature##
 Suggested usage: 
