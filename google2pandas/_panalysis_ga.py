@@ -2,6 +2,7 @@ from __future__ import division
 
 from googleapiclient.discovery import build
 from oauth2client import client, file, tools
+from sys import stdout
 
 import pandas as pd
 import numpy as np
@@ -93,6 +94,7 @@ class OAuthDataReader(object):
     def _reset_default_token_store(self):
         os.remove(default_token_file)
     
+    
 class GoogleAnalyticsQuery(OAuthDataReader):
     def __init__(self, scope=default_scope, token_file_name=default_token_file,
                  redirect=no_callback, secrets=default_secrets):
@@ -114,15 +116,18 @@ class GoogleAnalyticsQuery(OAuthDataReader):
         super(GoogleAnalyticsQuery, self).__init__(scope, token_file_name, redirect)
         self._service = self._init_service(secrets)
         
-    def execute_query(self, as_dict=False, **query):
+    def execute_query(self, as_dict=False, all_results=False, **query):
         '''
         Execute **query and translate it to a pandas.DataFrame object.
         
         Parameters:
         -----------
             as_dict : Boolean
-                return the dict object provided by GA instead of the DataFrame
+                Return the dict object provided by GA instead of the DataFrame
                 object. Default = False
+            all_results : Boolean
+                Obtain the full query results availble from GA (up to sampling limit).
+                This can be VERY time / bandwidth intensive! Default = False
             query : dict.
                 GA query, only with some added flexibility to be a bit sloppy. Adapted from
                 https://developers.google.com/analytics/devguides/reporting/core/v3/reference
@@ -207,6 +212,10 @@ class GoogleAnalyticsQuery(OAuthDataReader):
         
         res = ga_query.execute()
         
+        # Fix the 'query' field to be useful to us
+        for key in res['query'].keys():
+            res['query'][key.replace('-', '_')] = res['query'].pop(key)
+        
         if as_dict:
             return res
         
@@ -216,6 +225,38 @@ class GoogleAnalyticsQuery(OAuthDataReader):
             
             try:
                 df = pd.DataFrame(res[u'rows'], columns=cols)
+                
+                # Some kludge to optionally get the the complete query result
+                # up to the sampling limit
+                if all_results:
+                    print 'Obtianing full data set (up to sampling limit).'
+                    print 'This can take a VERY long time!'
+                    
+                    more = True
+                    temp_qry = formatted_query.copy()
+                    
+                    while more:
+                        try:
+                            temp_qry['start_index'] = \
+                                res['nextLink'].split('start-index=')[1].split('&')[0]
+                            
+                            # Monitor progress
+                            curr = int(temp_qry['start_index'])
+                            block = int(res['itemsPerPage'])
+                            total = res['totalResults']
+    
+                            stdout.write('\rGetting rows {0} - {1} of {2}'.\
+                                format(curr, curr + block - 1, total))
+                            stdout.flush()
+                                
+                            temp_res = self._service.data().ga().get(**temp_qry).execute()
+                            temp_df =  pd.DataFrame(temp_res['rows'], columns=cols)
+                            
+                            res['nextLink'] = temp_res['nextLink']
+                            df = pd.concat((df, temp_df), ignore_index=True)
+                            
+                        except KeyError:
+                            more = False
                 
             except KeyError:
                 df = pd.DataFrame(columns=cols)
@@ -335,6 +376,10 @@ class GoogleMCFQuery(OAuthDataReader):
         
         res = mcf_query.execute()
         
+        # Fix the 'query' field to be useful to us
+        for key in res['query'].keys():
+            res['query'][key.replace('-', '_')] = res['query'].pop(key)
+            
         if as_dict:
             return res
         
