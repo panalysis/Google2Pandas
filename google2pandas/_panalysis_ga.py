@@ -244,7 +244,7 @@ class GoogleAnalyticsQuery(OAuthDataReader):
                             curr = int(temp_qry['start_index'])
                             block = int(res['itemsPerPage'])
                             total = res['totalResults']
-    
+                            
                             stdout.write('\rGetting rows {0} - {1} of {2}'.\
                                 format(curr, curr + block - 1, total))
                             stdout.flush()

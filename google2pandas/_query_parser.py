@@ -128,14 +128,14 @@ class QueryParser(object):
         return query
 
     def _maybe_add_arg(self, query, field, data):
-        d = len(self.prefix)
-        
         # Kludge to account for the fact that the same (GA) ids value is used
         # for different google products.
         if field == 'ids':
             prefix = 'ga:'
         else:
             prefix = self.prefix
+            
+        d = len(prefix)
             
         if data is not None:
             if isinstance(data, (pd.compat.string_types, int)):
