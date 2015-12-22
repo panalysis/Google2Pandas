@@ -99,7 +99,7 @@ class QueryParser(object):
                 if query['samplingLevel'].upper() not in ['DEFAULT', 'FASTER', 'HIGHER_PRECISION']:
                     query.pop('samplingLevel')
                     
-                    print 'Invalid value for \'samplingLevel\' specified, using \'DEFAULT\' instead'
+                    print('Invalid value for \'samplingLevel\' specified, using \'DEFAULT\' instead')
                     
                     
         except KeyError:
@@ -113,7 +113,7 @@ class QueryParser(object):
                             'output', 'fields', 'userIp', 'quotaUser']:
                 query.pop(key)
                 
-                print 'Removed invalid query parameter \'{0}\''.format(key)
+                print('Removed invalid query parameter \'{0}\''.format(key))
         
         # Nothing to do for 'segment' actually as it's too fleixible to
         # fix into this fix-via-intuition framework, at least I'm not seeing
