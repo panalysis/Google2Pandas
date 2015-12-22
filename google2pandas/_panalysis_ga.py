@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 import httplib2, os
 
-from _query_parser import QueryParser
+from ._query_parser import QueryParser
 
 no_callback = client.OOB_CALLBACK_URN
 default_scope = 'https://www.googleapis.com/auth/analytics.readonly'
@@ -229,8 +229,8 @@ class GoogleAnalyticsQuery(OAuthDataReader):
                 # Some kludge to optionally get the the complete query result
                 # up to the sampling limit
                 if all_results:
-                    print 'Obtianing full data set (up to sampling limit).'
-                    print 'This can take a VERY long time!'
+                    print('Obtianing full data set (up to sampling limit).')
+                    print('This can take a VERY long time!')
                     
                     more = True
                     temp_qry = formatted_query.copy()
