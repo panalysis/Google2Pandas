@@ -192,7 +192,7 @@ class GoogleAnalyticsQuery(OAuthDataReader):
                 
         Returns:
         -----------
-            reuslt : pd.DataFrame or dict
+            result : pd.DataFrame or dict
             metadata : summary data supplied with query result
         '''
         try:
@@ -364,7 +364,7 @@ class GoogleMCFQuery(OAuthDataReader):
                 
         Returns:
         -----------
-            reuslt : pd.DataFrame or dict
+            result : pd.DataFrame or dict
             metadata : summary data supplied with query result
         '''
         try:
