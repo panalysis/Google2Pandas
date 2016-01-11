@@ -274,7 +274,12 @@ class GoogleAnalyticsQuery(OAuthDataReader):
                 elif x == u'BOOLEAN':
                     return bool
                 else:
-                    return unicode
+                    # this should work with both 2.7 and 3.4
+                    if isinstance(x, str):
+                        return str
+                    
+                    else:
+                        return unicode
                 
             for hdr in res[u'columnHeaders']:
                 col = hdr[u'name'][3:]
@@ -283,7 +288,12 @@ class GoogleAnalyticsQuery(OAuthDataReader):
                 df[col] = df[col].apply(my_mapper(dtp))
                 
             # Return the summary info as well
-            res.pop('rows')
+            try:
+                res.pop('rows')
+                
+            except KeyError:
+                pass
+            
             res.pop('columnHeaders')
             
             return df, res
@@ -411,16 +421,26 @@ class GoogleMCFQuery(OAuthDataReader):
                 elif x == u'BOOLEAN':
                     return bool
                 else:
-                    return unicode
+                    # this should work with both 2.7 and 3.4
+                    if isinstance(x, str):
+                        return str
+                    
+                    else:
+                        return unicode
                 
             for hdr in res[u'columnHeaders']:
-                col = hdr[u'name'][4:]
+                col = hdr[u'name'][3:]
                 dtp = hdr[u'dataType']
                 
                 df[col] = df[col].apply(my_mapper(dtp))
                 
             # Return the summary info as well
-            res.pop('rows')
+            try:
+                res.pop('rows')
+                
+            except KeyError:
+                pass
+            
             res.pop('columnHeaders')
             
             return df, res
