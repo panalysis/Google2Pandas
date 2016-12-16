@@ -66,7 +66,7 @@ class QueryParser(object):
             
         except KeyError as e:
             names = 'ids', 'metrics'
-            lst = query['ids'], query['dimensions'], query['metrics']
+            lst = query['ids'], query['metrics']
             [self._maybe_add_arg(query, n, d) for n, d in zip(names, lst)]
         
         # 3. Clean up the filtering if present
