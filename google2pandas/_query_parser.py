@@ -56,9 +56,18 @@ class QueryParser(object):
         # First sneak in fix to allow providing ids as int value
         query['ids'] = str(query['ids'])
         
-        names = 'ids', 'dimensions', 'metrics'
-        lst = query['ids'], query['dimensions'], query['metrics']
-        [self._maybe_add_arg(query, n, d) for n, d in zip(names, lst)]
+        # this is a bit rough, but I don't want to put in a defualt
+        # empty value anywhere as it would be in confilct with the rest
+        # of the methodology
+        try:
+            names = 'ids', 'dimensions', 'metrics'
+            lst = query['ids'], query['dimensions'], query['metrics']
+            [self._maybe_add_arg(query, n, d) for n, d in zip(names, lst)]
+            
+        except KeyError as e:
+            names = 'ids', 'metrics'
+            lst = query['ids'], query['dimensions'], query['metrics']
+            [self._maybe_add_arg(query, n, d) for n, d in zip(names, lst)]
         
         # 3. Clean up the filtering if present
         try:
