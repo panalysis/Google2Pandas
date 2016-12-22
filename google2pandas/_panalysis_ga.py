@@ -2,6 +2,7 @@ from __future__ import division
 
 from googleapiclient.discovery import build
 from oauth2client import client, file, tools
+from oauth2client.service_account import ServiceAccountCredentials
 from sys import stdout
 
 import pandas as pd
@@ -12,9 +13,46 @@ from ._query_parser import QueryParser
 
 no_callback = client.OOB_CALLBACK_URN
 default_scope = 'https://www.googleapis.com/auth/analytics.readonly'
+default_discovery = 'https://analyticsreporting.googleapis.com/$discovery/rest'
 default_token_file = os.path.join(os.path.dirname(__file__), 'analytics.dat')
 default_secrets = os.path.join(os.path.dirname(__file__), 'client_secrets.json')
 
+class InvalidAPIError(Exception):
+    def __init__(self, value):
+        self.value = value
+    
+class OAuthDataReaderV4(object):
+    '''
+    Abstract class for handling OAuth2 authentication using the Google
+    oauth2client library and the V4 Analytics API
+    '''
+    def __init__(self, scope, discovery_uri):
+        '''
+        Parameters:
+        -----------
+            secrets : string
+                Path to client_secrets.json file. p12 formatted keys not
+                supported at this point.
+            scope : list or string
+                Designates the authentication scope(s).
+            discovery_uri : tuple or string
+                Designates discovery uri(s)
+        '''
+        self._scope_ = scope
+        self._discovery_ = discovery_uri
+        self._api_ = 'v4'
+        
+    def _init_service(self, secrets):
+        creds = ServiceAccountCredentials.from_json_keyfile_name(secrets,
+                                                                 scopes=self._scope_)
+        
+        http = creds.authorize(httplib2.Http())
+        
+        return build('analytics',
+                     self._api_,
+                     http=http,
+                     discoveryServiceUrl=self._discovery_)
+        
 class OAuthDataReader(object):
     '''
     Abstract class for handling OAuth2 authentication using the Google
@@ -22,22 +60,23 @@ class OAuthDataReader(object):
     '''
     def __init__(self, scope, token_file_name, redirect):
         '''
-        Parameters
-        ----------
-        scope : str
-            Designates the authentication scope
-        token_file_name : str
-            Location of cache for authenticated tokens
-        redirect : str
-            Redirect URL
+        Parameters:
+        -----------
+            scope : str
+                Designates the authentication scope
+            token_file_name : str
+                Location of cache for authenticated tokens
+            redirect : str
+                Redirect URL
         '''
-        self._scope = scope
-        self._redirect_url = redirect
-        self._token_store = file.Storage(token_file_name)
+        self._scope_ = scope
+        self._redirect_url_ = redirect
+        self._token_store_ = file.Storage(token_file_name)
+        self._api_ = 'v3'
         
         # NOTE:
         # This is a bit rough...
-        self._flags = tools.argparser.parse_args(args=[])
+        self._flags_ = tools.argparser.parse_args(args=[])
         
     def _authenticate(self, secrets):
         '''
@@ -55,10 +94,10 @@ class OAuthDataReader(object):
         '''
         flow = self._create_flow(secrets)
         
-        credentials = self._token_store.get()
+        credentials = self._token_store_.get()
         
         if credentials is None or credentials.invalid:
-            credentials = tools.run_flow(flow, self._token_store, self._flags)
+            credentials = tools.run_flow(flow, self._token_store_, self._flags_)
             
         http = credentials.authorize(http=httplib2.Http())
         
@@ -77,8 +116,9 @@ class OAuthDataReader(object):
         -----
         See google documentation for format of secrets file
         '''
-        flow = client.flow_from_clientsecrets(secrets, scope=self._scope, \
-                    message=tools.message_if_missing(secrets))
+        flow = client.flow_from_clientsecrets(secrets,
+                                              scope=self._scope_,
+                                              message=tools.message_if_missing(secrets))
         
         return flow
     
@@ -89,15 +129,18 @@ class OAuthDataReader(object):
         '''
         http = self._authenticate(secrets)
         
-        return build('analytics', 'v3', http=http)
+        return build('analytics', self._api_, http=http)
     
     def _reset_default_token_store(self):
         os.remove(default_token_file)
     
     
 class GoogleAnalyticsQuery(OAuthDataReader):
-    def __init__(self, scope=default_scope, token_file_name=default_token_file,
-                 redirect=no_callback, secrets=default_secrets):
+    def __init__(self,
+                 scope=default_scope,
+                 token_file_name=default_token_file,
+                 redirect=no_callback,
+                 secrets=default_secrets):
         '''
         Query the GA API with ease!  Simply obtain the 'client_secrets.json' file
         as usual and move it to the same directory as this file (default) or
@@ -113,7 +156,10 @@ class GoogleAnalyticsQuery(OAuthDataReader):
         API queries must be provided as a dict. object, see the execute_query
         docstring for valid options.
         '''
-        super(GoogleAnalyticsQuery, self).__init__(scope, token_file_name, redirect)
+        super(GoogleAnalyticsQuery, self).__init__(scope,
+                                                   token_file_name,
+                                                   redirect)
+            
         self._service = self._init_service(secrets)
         
     def execute_query(self, as_dict=False, all_results=False, **query):
@@ -298,7 +344,120 @@ class GoogleAnalyticsQuery(OAuthDataReader):
             
             return df, res
 
-
+class GoogleAnalyticsQueryV4(OAuthDataReaderV4):
+    def __init__(self,
+                 scope=default_scope,
+                 discovery=default_discovery,
+                 secrets=default_secrets):
+        '''
+        Query the GA API with ease!  Simply obtain the 'client_secrets.json' file
+        as usual and move it to the same directory as this file (default) or
+        specify the file location when instantiating this class.
+        
+        *** Different for API V4 ***
+        The authentication process is different for the V4 API. In terms of
+        this class, the primary difference is that the 'analytics.dat' file is
+        no longer required, but adding the service account email to the actual
+        service account is. The email address will be of the form 
+        
+            xxx@report-automation-1316.iam.gserviceaccount.com
+        
+        and is in the JSON key provided. Refer to 
+        
+            https://developers.google.com/analytics/devguides/reporting/core/v4/quickstart/service-py
+            
+        for additional details.
+        
+        TODO:
+        At the very least, the 'fields' parameter should be included here:
+        
+            https://developers.google.com/analytics/devguides/reporting/core/v4/parameters
+        '''
+        super(GoogleAnalyticsQueryV4, self).__init__(scope, discovery)
+        self._service = self._init_service(secrets)
+        
+    def execute_query(self, query, as_dict=False):
+        '''
+        Execute **query and translate it to a pandas.DataFrame object.
+         
+        Parameters:
+        -----------
+            query: dict
+                Refer to:
+                    
+                    https://developers.google.com/analytics/devguides/reporting/core/v4/rest/v4/reports
+                    
+                for guidance. Automatic parsing has been deprecated in V4.
+            as_dict : Boolean
+                Return the dict object provided by GA instead of the DataFrame
+                object. Default = False
+                
+        Returns:
+        -----------
+            df : pandas.DataFrame
+                Reformatted response to **query.
+        '''
+        response = self._service.reports().batchGet(body=query).execute()
+        
+        if as_dict:
+            return response
+        
+        else:
+            return self.resp2frame(response)
+            
+    @staticmethod
+    def resp2frame(resp):
+        '''
+        Place reformatting outside of primary execute method, easier to improve
+        this way.
+        
+        TODO:
+        This is VERY inclomplete and pure kludge at this point!
+        '''
+        out = pd.DataFrame()
+        
+        for rpt in resp.get('reports', []):
+            # column names
+            col_hdrs = rpt.get('columnHeader', {})
+            cols = col_hdrs['dimensions']
+            
+            if 'metricHeader' in col_hdrs.keys():
+                metrics = col_hdrs.get('metricHeader', {}).get('metricHeaderEntries', [])
+                
+                for m in metrics:
+                    # no effort make here to retain the dtype for the column
+                    cols = cols + [m.get('name', '')]
+                    
+            df = pd.DataFrame(columns=cols)
+            
+            rows = rpt.get('data', {}).get('rows')
+            for row in rows:
+                d = row.get('dimensions', [])
+                
+                if 'metrics' in row.keys():
+                    metrics = row.get('metrics', [])
+                    for m in metrics:
+                        
+                        # TODO:
+                        # this will likely not work in general
+                        d = d + m.get('values', '')
+                
+                drow = {}
+                for i, c in enumerate(cols):
+                    drow.update({c : d[i]})
+                    
+                df = pd.concat((df, pd.DataFrame(drow, index=[0])),
+                               ignore_index=True)
+                
+            out = pd.concat((out, df), ignore_index=True)
+        
+        # get rid of the annoying 'ga:' bits on each column name
+        for col in out.columns:
+            out.rename(columns={col : col[3:]}, inplace=True)
+            
+        return out
+    
+    
 class GoogleMCFQuery(OAuthDataReader):
     def __init__(self, scope=default_scope, token_file_name=default_token_file,
                  redirect=no_callback, secrets=default_secrets):
