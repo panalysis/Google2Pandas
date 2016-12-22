@@ -4,23 +4,21 @@ from googleapiclient.discovery import build
 from oauth2client import client, file, tools
 from oauth2client.service_account import ServiceAccountCredentials
 from sys import stdout
+from copy import deepcopy
 
 import pandas as pd
 import numpy as np
 import httplib2, os
 
-from ._query_parser import QueryParser
+#from ._query_parser import QueryParser
 
 no_callback = client.OOB_CALLBACK_URN
 default_scope = 'https://www.googleapis.com/auth/analytics.readonly'
 default_discovery = 'https://analyticsreporting.googleapis.com/$discovery/rest'
-default_token_file = os.path.join(os.path.dirname(__file__), 'analytics.dat')
-default_secrets_v3 = os.path.join(os.path.dirname(__file__), 'client_secrets_v3.json')
-default_secrets_v4 = os.path.join(os.path.dirname(__file__), 'client_secrets_v4.json')
+default_token_file = ''#os.path.join(os.path.dirname(__file__), 'analytics.dat')
+default_secrets_v3 = ''#os.path.join(os.path.dirname(__file__), 'client_secrets_v3.json')
+default_secrets_v4 = ''#os.path.join(os.path.dirname(__file__), 'client_secrets_v4.json')
 
-class InvalidAPIError(Exception):
-    def __init__(self, value):
-        self.value = value
     
 class OAuthDataReaderV4(object):
     '''
@@ -377,7 +375,7 @@ class GoogleAnalyticsQueryV4(OAuthDataReaderV4):
         super(GoogleAnalyticsQueryV4, self).__init__(scope, discovery)
         self._service = self._init_service(secrets)
         
-    def execute_query(self, query, as_dict=False):
+    def execute_query(self, query, as_dict=False, all_results=True):
         '''
         Execute **query and translate it to a pandas.DataFrame object.
          
@@ -392,19 +390,38 @@ class GoogleAnalyticsQueryV4(OAuthDataReaderV4):
             as_dict : Boolean
                 Return the dict object provided by GA instead of the DataFrame
                 object. Default = False
+            all_results : Boolean
+                Get all the data for the query instead of the 1000-row limit.
+                Defualt = True
                 
         Returns:
         -----------
             df : pandas.DataFrame
                 Reformatted response to **query.
         '''
-        response = self._service.reports().batchGet(body=query).execute()
-        
+        if all_results:
+            qry = deepcopy(query)
+            out = {'reports' : []}
+            
+            while True:
+                response = self._service.reports().batchGet(body=query).execute()
+                out['reports'].append(response['reports'])
+                
+                tkn = response.get('reports', [])[0].get('nextPageToken', '')
+                if tkn:
+                    qry['reportRequests'][0].update({'pageToken' : tkn})
+                    
+                else:
+                    break
+                    
+        else:
+            out = self._service.reports().batchGet(body=query).execute()
+            
         if as_dict:
-            return response
+            return out
         
         else:
-            return self.resp2frame(response)
+            return self.resp2frame(out)
             
     @staticmethod
     def resp2frame(resp):
