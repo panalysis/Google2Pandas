@@ -50,22 +50,22 @@ df, metadata = conn.execute_query(**query)
 ```
 
 ##New and Improved (more of a work in progess really)
-Support has now been added for the GA Reporting API V4 as suggested in [issue #21](https://github.com/panalysis/Google2Pandas/issues/21) via the `GoogleAnalyticsQueryV4` class. The support is
-rather rough for now, the primary reason being that since I'm not working with
-GA much at all these days I do not have the time to fully learn the many new
+Support has now been added for the GA Reporting API V4 as suggested in [issue #21](https://github.com/panalysis/Google2Pandas/issues/21) via the `GoogleAnalyticsQueryV4`
+class.The support is rather rough for now, the primary reason being that since I'm not
+working with GA much at all these days I do not have the time to fully learn the many new
 features present in the new API.
 
 For now, what this means is that there is zero parsing of the queries provieded,
 it's down to the user to structure them correctly. As well, no guarantees are
-provieded as to the ability to of the `resp2frame` to robustly convert the
-JSON object from GA to a `pandas.DataFrame` object in a manner that is generically
-robust. The `as_dict` keyword argument causes the restructuring step to be skipped;
-if you find room for improvements please do not hesitate to make a PR with your
+provieded as to the ability to of the `resp2frame` method to convert the JSON object
+from GA to a `pandas.DataFrame` object in a manner that is generically robust. The
+`as_dict` keyword argument causes the restructuring step to be skipped; if you find
+room for improvements please do not hesitate to make a PR with your
 suggestions!
 
-To use this module, one needs to follow the [new setup process](https://developers.google.com/analytics/devguides/reporting/core/v4/quickstart/service-py) to enable acces. No more `analytics.dat`
-file, instead one needs to add the generated email address to the GA view you
-wish to access.
+To use this module, one needs to follow the [new setup process](https://developers.google.com/analytics/devguides/reporting/core/v4/quickstart/service-py)
+to enable acces. No more `analytics.dat` file, instead one needs to simply add the
+generated email address to the GA view you wish to access.
 
 I also suggest naming the `client_secrets` file to something that indicates it
 is for the V4 API, as it is quite a different thing than the V3 version.
