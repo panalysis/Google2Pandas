@@ -55,9 +55,9 @@ class.The support is rather rough for now, the primary reason being that since I
 working with GA much at all these days I do not have the time to fully learn the many new
 features present in the new API.
 
-For now, what this means is that there is zero parsing of the queries provieded,
+For now, what this means is that there is zero parsing of the queries provided,
 it's down to the user to structure them correctly. As well, no guarantees are
-provieded as to the ability to of the `resp2frame` method to convert the JSON object
+provided as to the ability to of the `resp2frame` method to convert the JSON object
 from GA to a `pandas.DataFrame` object in a manner that is generically robust. The
 `as_dict` keyword argument causes the restructuring step to be skipped; if you find
 room for improvements please do not hesitate to make a PR with your
