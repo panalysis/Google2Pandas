@@ -10,14 +10,14 @@ import pandas as pd
 import numpy as np
 import httplib2, os
 
-#from ._query_parser import QueryParser
+from ._query_parser import QueryParser
 
 no_callback = client.OOB_CALLBACK_URN
 default_scope = 'https://www.googleapis.com/auth/analytics.readonly'
 default_discovery = 'https://analyticsreporting.googleapis.com/$discovery/rest'
-default_token_file = ''#os.path.join(os.path.dirname(__file__), 'analytics.dat')
-default_secrets_v3 = ''#os.path.join(os.path.dirname(__file__), 'client_secrets_v3.json')
-default_secrets_v4 = ''#os.path.join(os.path.dirname(__file__), 'client_secrets_v4.json')
+default_token_file = os.path.join(os.path.dirname(__file__), 'analytics.dat')
+default_secrets_v3 = os.path.join(os.path.dirname(__file__), 'client_secrets_v3.json')
+default_secrets_v4 = os.path.join(os.path.dirname(__file__), 'client_secrets_v4.json')
 
     
 class OAuthDataReaderV4(object):
@@ -443,7 +443,7 @@ class GoogleAnalyticsQueryV4(OAuthDataReaderV4):
                 metrics = col_hdrs.get('metricHeader', {}).get('metricHeaderEntries', [])
                 
                 for m in metrics:
-                    # no effort make here to retain the dtype for the column
+                    # no effort made here to retain the dtype of the column
                     cols = cols + [m.get('name', '')]
                     
             df = pd.DataFrame(columns=cols)
