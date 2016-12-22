@@ -436,7 +436,7 @@ class GoogleAnalyticsQueryV4(OAuthDataReaderV4):
         
         for rpt in resp.get('reports', []):
             # column names
-            col_hdrs = rpt.get('columnHeader', {})
+            col_hdrs = rpt[0].get('columnHeader', {})
             cols = col_hdrs['dimensions']
             
             if 'metricHeader' in col_hdrs.keys():
@@ -448,7 +448,7 @@ class GoogleAnalyticsQueryV4(OAuthDataReaderV4):
                     
             df = pd.DataFrame(columns=cols)
             
-            rows = rpt.get('data', {}).get('rows')
+            rows = rpt[0].get('data', {}).get('rows')
             for row in rows:
                 d = row.get('dimensions', [])
                 
