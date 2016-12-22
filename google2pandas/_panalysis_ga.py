@@ -15,7 +15,8 @@ no_callback = client.OOB_CALLBACK_URN
 default_scope = 'https://www.googleapis.com/auth/analytics.readonly'
 default_discovery = 'https://analyticsreporting.googleapis.com/$discovery/rest'
 default_token_file = os.path.join(os.path.dirname(__file__), 'analytics.dat')
-default_secrets = os.path.join(os.path.dirname(__file__), 'client_secrets.json')
+default_secrets_v3 = os.path.join(os.path.dirname(__file__), 'client_secrets_v3.json')
+default_secrets_v4 = os.path.join(os.path.dirname(__file__), 'client_secrets_v4.json')
 
 class InvalidAPIError(Exception):
     def __init__(self, value):
@@ -140,7 +141,7 @@ class GoogleAnalyticsQuery(OAuthDataReader):
                  scope=default_scope,
                  token_file_name=default_token_file,
                  redirect=no_callback,
-                 secrets=default_secrets):
+                 secrets=default_secrets_v3):
         '''
         Query the GA API with ease!  Simply obtain the 'client_secrets.json' file
         as usual and move it to the same directory as this file (default) or
@@ -348,7 +349,7 @@ class GoogleAnalyticsQueryV4(OAuthDataReaderV4):
     def __init__(self,
                  scope=default_scope,
                  discovery=default_discovery,
-                 secrets=default_secrets):
+                 secrets=default_secrets_v4):
         '''
         Query the GA API with ease!  Simply obtain the 'client_secrets.json' file
         as usual and move it to the same directory as this file (default) or
@@ -459,8 +460,11 @@ class GoogleAnalyticsQueryV4(OAuthDataReaderV4):
     
     
 class GoogleMCFQuery(OAuthDataReader):
-    def __init__(self, scope=default_scope, token_file_name=default_token_file,
-                 redirect=no_callback, secrets=default_secrets):
+    def __init__(self,
+                 scope=default_scope,
+                 token_file_name=default_token_file,
+                 redirect=no_callback,
+                 secrets=default_secrets_v3):
         '''
         Query the MCF API with ease!  Simply obtain the 'client_secrets.json' file
         as usual and move it to the same directory as this file (default) or
