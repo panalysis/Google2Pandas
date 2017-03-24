@@ -405,7 +405,7 @@ class GoogleAnalyticsQueryV4(OAuthDataReaderV4):
             
             while True:
                 response = self._service.reports().batchGet(body=qry).execute()
-                out['reports'].append(response['reports'])
+                out['reports'] = out['reports'] + response['reports']
                 
                 tkn = response.get('reports', [])[0].get('nextPageToken', '')
                 if tkn:

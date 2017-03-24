@@ -1,4 +1,4 @@
-#README#
+# README
 
 Google2Pandas will eventually be a set of tools that will allow for easy querying
 of various google database products (Analytics, etc.) with the results returned as 
@@ -7,14 +7,14 @@ pandas.DataFrame objects (http://pandas.pydata.org/).
 At this point, only queries to Google Analytics and the Multi-Channel Funnels Reporting via
 the core reporting API are supported.
 
-##Nomenclature##
+## Nomenclature
 Suggested usage: 
 
 ```
 from google2pandas import *
 ```
 
-##Quick Setup##
+## Quick Setup
 Install the latest version via pip:
 
 ```
@@ -33,7 +33,7 @@ looks in `/path/to/your/dist-packages/google2pandas/analytics.dat`) you will lik
 need to instantiate the `GoogleAnalyticsQuery` class specifying a local location
 for the token file, and manually relocate it later.
 
-###Quick Demo###
+### Quick Demo
 ```
 from google2pandas import *
 
@@ -49,7 +49,7 @@ conn = GoogleAnalyticsQuery(token_file_name='analytics.dat')
 df, metadata = conn.execute_query(**query)
 ```
 
-##New and Improved (more of a work in progess really)
+## New and Improved (more of a work in progess really)
 Support has now been added for the GA Reporting API V4 as suggested in [issue #21](https://github.com/panalysis/Google2Pandas/issues/21) via the `GoogleAnalyticsQueryV4`
 class.The support is rather rough for now, the primary reason being that since I'm not
 working with GA much at all these days I do not have the time to fully learn the many new
@@ -70,7 +70,7 @@ generated email address to the GA view you wish to access.
 I also suggest naming the `client_secrets` file to something that indicates it
 is for the V4 API, as it is quite a different thing than the V3 version.
 
-###Quick Demo###
+### Quick Demo
 ```
 from google2pandas import *
 
