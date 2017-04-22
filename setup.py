@@ -32,8 +32,8 @@ metadata = {\
                            'Topic :: Scientific/Engineering', \
                            'Operating System :: OS Independent'],
     'license'           : license,
-    'install_requires'  : ['numpy>=1.7.1',
-			   'pandas>=0.15.0', \
+    'install_requires'  : ['numpy>=1.7',
+			   'pandas>=0.15',
                            'google-api-python-client',
 			   'httplib2'],
     'packages'          : find_packages()}
