@@ -1,6 +1,6 @@
 # README
 
-Google2Pandas will eventually be a set of tools that will allow for easy querying
+Google2Pandas --will-- may eventually be a set of tools that will allow for easy querying
 of various google database products (Analytics, etc.) with the results returned as 
 pandas.DataFrame objects (http://pandas.pydata.org/).
 
