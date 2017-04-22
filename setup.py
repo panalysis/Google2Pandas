@@ -18,7 +18,8 @@ metadata = {\
     'author_email'      : 'sales@panalysis.com',
     'maintainer'        : 'Matt S.',
     'maintainer_email'  : 'sales@panalysis.com',
-    'url'               : 'https://github.com/panalysis-gpl/Google2Pandas',
+    'url'               : 'https://github.com/panalysis/Google2Pandas',
+    'download_url'	: 'https://github.com/DelciousHair/google2pandas/archive/0.1.0.tar.gz',
     'description'       : 'Google2Pandas',
     'long_description'  : long_description,
     'classifiers'       : ['Development Status :: 4 - Beta', \
