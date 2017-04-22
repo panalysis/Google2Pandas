@@ -18,6 +18,12 @@ from google2pandas import *
 Install the latest version via pip:
 
 ```
+sudo pip install Google2Pandas
+```
+
+or install the latest development version via:
+
+```
 sudo pip install git+https://github.com/panalysis/Google2Pandas
 ```
 
