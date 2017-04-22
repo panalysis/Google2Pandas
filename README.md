@@ -33,6 +33,9 @@ looks in `/path/to/your/dist-packages/google2pandas/analytics.dat`) you will lik
 need to instantiate the `GoogleAnalyticsQuery` class specifying a local location
 for the token file, and manually relocate it later.
 
+Alternatively, store your credentials anywhere you like and simply pass a pointer
+to `client_secrets_v3.json` and `analytics.dat` when instantiating the class.
+
 ### Quick Demo
 ```
 from google2pandas import *
@@ -45,14 +48,16 @@ query = {\
     'start_date'    : '8daysAgo',
     'max_results'   : 10}
     
-conn = GoogleAnalyticsQuery(token_file_name='analytics.dat')
+conn = GoogleAnalyticsQuery(
+        token_file_name='my_analytics.dat',
+	secrets='my_client_secrets_v3.json')
 df, metadata = conn.execute_query(**query)
 ```
 
 ## New and Improved (more of a work in progess really)
 Support has now been added for the GA Reporting API V4 as suggested in [issue #21](https://github.com/panalysis/Google2Pandas/issues/21) via the `GoogleAnalyticsQueryV4`
-class.The support is rather rough for now, the primary reason being that since I'm not
-working with GA much at all these days I do not have the time to fully learn the many new
+class. The support is rather rough for now, the primary reason being that since I'm
+not working with GA much at all these days I do not have the time to fully learn the
 features present in the new API.
 
 For now, what this means is that there is zero parsing of the queries provided,
@@ -68,7 +73,8 @@ to enable acces. No more `analytics.dat` file, instead one needs to simply add t
 generated email address to the GA view you wish to access.
 
 I also suggest naming the `client_secrets` file to something that indicates it
-is for the V4 API, as it is quite a different thing than the V3 version.
+is for the V4 API, as it is quite a different thing than the V3 version (default
+behaviour is to look for `client_secrets_v4.json` in `dist-packages/google2pandas/`).
 
 ### Quick Demo
 ```
@@ -107,6 +113,6 @@ query = {
 # Assume we have placed our client_secrets_v4.json file in the current
 # working directory.
 
-conn = GoogleAnalyticsQueryV4(secrets='client_secrets_v4.json')
+conn = GoogleAnalyticsQueryV4(secrets='my_client_secrets_v4.json')
 df = conn.execute_query(query)
 ```
