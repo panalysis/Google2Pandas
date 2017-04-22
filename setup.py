@@ -13,7 +13,7 @@ with open(path.join(here, 'LICENSE.txt'), encoding='utf-8') as f:
 
 metadata = {\
     'name'              : 'Google2Pandas',
-    'version'           : '0.1.0',
+    'version'           : '0.1.001',
     'author'            : 'Matt S.',
     'author_email'      : 'sales@panalysis.com',
     'maintainer'        : 'Matt S.',
