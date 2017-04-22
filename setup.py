@@ -25,12 +25,16 @@ metadata = {\
                            'Programming Language :: Python', \
                            'Programming Language :: Python :: 2', \
                            'Programming Language :: Python :: 2.7', \
+                           'Programming Language :: Python :: 3', \
+                           'Programming Language :: Python :: 3.5', \
                            'Intended Audience :: Science/Research', \
                            'Topic :: Scientific/Engineering', \
                            'Operating System :: OS Independent'],
     'license'           : license,
-    'install_requires'  : ['numpy>=1.7.1', 'pandas>=0.15.0', \
-                           'google-api-python-client', 'httplib2'],
+    'install_requires'  : ['numpy>=1.7.1',
+			   'pandas>=0.15.0', \
+                           'google-api-python-client',
+			   'httplib2'],
     'packages'          : find_packages()}
 
 setup(**metadata)
