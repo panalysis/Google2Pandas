@@ -1,4 +1,4 @@
-from __future__ import division
+
 
 from googleapiclient.discovery import build
 from oauth2client import client, file, tools
@@ -258,7 +258,7 @@ class GoogleAnalyticsQuery(OAuthDataReader):
         res = ga_query.execute()
         
         # Fix the 'query' field to be useful to us
-        for key in res['query'].keys():
+        for key in list(res['query'].keys()):
             res['query'][key.replace('-', '_')] = res['query'].pop(key)
         
         if as_dict:
@@ -266,10 +266,10 @@ class GoogleAnalyticsQuery(OAuthDataReader):
         
         else:
             # re-cast query result (dict) to a pd.DataFrame object
-            cols = [col[u'name'][3:] for col in res[u'columnHeaders']]
+            cols = [col['name'][3:] for col in res['columnHeaders']]
             
             try:
-                df = pd.DataFrame(res[u'rows'], columns=cols)
+                df = pd.DataFrame(res['rows'], columns=cols)
                 
                 # Some kludge to optionally get the the complete query result
                 # up to the sampling limit
@@ -314,9 +314,9 @@ class GoogleAnalyticsQuery(OAuthDataReader):
             # This will get the ball rolling, but the end user is likely
             # going to be stuck dealing with things on a per-case basis.
             def my_mapper(x):
-                if x == u'INTEGER':
+                if x == 'INTEGER':
                     return int
-                elif x == u'BOOLEAN':
+                elif x == 'BOOLEAN':
                     return bool
                 else:
                     # this should work with both 2.7 and 3.4
@@ -324,11 +324,11 @@ class GoogleAnalyticsQuery(OAuthDataReader):
                         return str
                     
                     else:
-                        return unicode
+                        return str
                 
-            for hdr in res[u'columnHeaders']:
-                col = hdr[u'name'][3:]
-                dtp = hdr[u'dataType']
+            for hdr in res['columnHeaders']:
+                col = hdr['name'][3:]
+                dtp = hdr['dataType']
                 
                 df[col] = df[col].apply(my_mapper(dtp))
                 
@@ -439,7 +439,7 @@ class GoogleAnalyticsQueryV4(OAuthDataReaderV4):
             col_hdrs = rpt.get('columnHeader', {})
             cols = col_hdrs['dimensions']
             
-            if 'metricHeader' in col_hdrs.keys():
+            if 'metricHeader' in list(col_hdrs.keys()):
                 metrics = col_hdrs.get('metricHeader', {}).get('metricHeaderEntries', [])
                 
                 for m in metrics:
@@ -452,7 +452,7 @@ class GoogleAnalyticsQueryV4(OAuthDataReaderV4):
             for row in rows:
                 d = row.get('dimensions', [])
                 
-                if 'metrics' in row.keys():
+                if 'metrics' in list(row.keys()):
                     metrics = row.get('metrics', [])
                     for m in metrics:
                         
@@ -558,7 +558,7 @@ class GoogleMCFQuery(OAuthDataReader):
             metadata : summary data supplied with query result
         '''
         try:
-            formatted_query = QueryParser(prefix=u'mcf:').parse(**query)
+            formatted_query = QueryParser(prefix='mcf:').parse(**query)
             
             mcf_query = self._service.data().mcf().get(**formatted_query)
             
@@ -568,7 +568,7 @@ class GoogleMCFQuery(OAuthDataReader):
         res = mcf_query.execute()
         
         # Fix the 'query' field to be useful to us
-        for key in res['query'].keys():
+        for key in list(res['query'].keys()):
             res['query'][key.replace('-', '_')] = res['query'].pop(key)
             
         if as_dict:
@@ -581,7 +581,7 @@ class GoogleMCFQuery(OAuthDataReader):
             
             try:
                 df = pd.DataFrame(np.array(\
-                        [i.values() for row in res['rows'] for i in row]).\
+                        [list(i.values()) for row in res['rows'] for i in row]).\
                             reshape(rows, len(cols)), columns=cols)
                 
             except KeyError:
@@ -594,11 +594,11 @@ class GoogleMCFQuery(OAuthDataReader):
             # This will get the ball rolling, but the end user is likely
             # going to be stuck dealing with things on a per-case basis.
             def my_mapper(x):
-                if x == u'INTEGER':
+                if x == 'INTEGER':
                     return int
-                elif x == u'CURRENCY':
+                elif x == 'CURRENCY':
                     return float
-                elif x == u'BOOLEAN':
+                elif x == 'BOOLEAN':
                     return bool
                 else:
                     # this should work with both 2.7 and 3.4
@@ -606,11 +606,11 @@ class GoogleMCFQuery(OAuthDataReader):
                         return str
                     
                     else:
-                        return unicode
+                        return str
                 
-            for hdr in res[u'columnHeaders']:
-                col = hdr[u'name'][3:]
-                dtp = hdr[u'dataType']
+            for hdr in res['columnHeaders']:
+                col = hdr['name'][3:]
+                dtp = hdr['dataType']
                 
                 df[col] = df[col].apply(my_mapper(dtp))
                 
