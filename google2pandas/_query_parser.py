@@ -1,4 +1,4 @@
-from __future__ import division
+
 
 import pandas as pd
 
@@ -7,7 +7,7 @@ class QueryParser(object):
     Simple parser to allow users to be a bit sloppy with thier queries and still
     get what they want.
     '''
-    def __init__(self, prefix=u'ga:'):
+    def __init__(self, prefix='ga:'):
         self.prefix = prefix
     
     def parse(self, **kwargs):
@@ -115,14 +115,14 @@ class QueryParser(object):
             pass
         
         # 7. Remove options that should not be there
-        for key in query.keys():
+        for key in list(query.keys()):
             if key not in ['ids', 'start_date', 'end_date', 'metrics', \
                             'dimensions', 'sort', 'filters', 'segment', \
                             'samplingLevel', 'start_index', 'max_results', \
                             'output', 'fields', 'userIp', 'quotaUser']:
                 query.pop(key)
                 
-                print('Removed invalid query parameter \'{0}\''.format(key))
+                print(('Removed invalid query parameter \'{0}\''.format(key)))
         
         # Nothing to do for 'segment' actually as it's too fleixible to
         # fix into this fix-via-intuition framework, at least I'm not seeing
