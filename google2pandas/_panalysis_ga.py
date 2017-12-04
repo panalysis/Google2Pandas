@@ -313,6 +313,8 @@ class GoogleAnalyticsQuery(OAuthDataReader):
             # be nice, but is probably far more effort than it's worth.
             # This will get the ball rolling, but the end user is likely
             # going to be stuck dealing with things on a per-case basis.
+            # We should be able to leverage the resp2frame code below to 
+            # improve the the handling of conversion here.
             def my_mapper(x):
                 if x == 'INTEGER':
                     return int
@@ -605,6 +607,8 @@ class GoogleMCFQuery(OAuthDataReader):
             # be nice, but is probably far more effort than it's worth.
             # This will get the ball rolling, but the end user is likely
             # going to be stuck dealing with things on a per-case basis.
+            # We should be able to leverage the resp2frame code above to 
+            # improve the the handling of conversion here.
             def my_mapper(x):
                 if x == 'INTEGER':
                     return int
