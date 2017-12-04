@@ -488,29 +488,29 @@ class GoogleAnalyticsQueryV4(OAuthDataReaderV4):
 
 
 
-    class GoogleMCFQuery(OAuthDataReader):
-        def __init__(self,
-                     scope=default_scope,
-                     token_file_name=default_token_file,
-                     redirect=no_callback,
-                     secrets=default_secrets_v3):
-            '''
-            Query the MCF API with ease!  Simply obtain the 'client_secrets.json' file
-            as usual and move it to the same directory as this file (default) or
-            specify the file location when instantiating this class.
+class GoogleMCFQuery(OAuthDataReader):
+    def __init__(self,
+                 scope=default_scope,
+                 token_file_name=default_token_file,
+                 redirect=no_callback,
+                 secrets=default_secrets_v3):
+        '''
+        Query the MCF API with ease!  Simply obtain the 'client_secrets.json' file
+        as usual and move it to the same directory as this file (default) or
+        specify the file location when instantiating this class.
 
-            If one does not exist, an 'analytics.dat' token file will also be
-            created / read from the current working directory or whatever has
-            imported the class (default) or, one may specify the desired
-            location when instantiating this class.  Note that this file requires
-            write access, so you may need to either adjust the file permissions if
-            using the default value.
+        If one does not exist, an 'analytics.dat' token file will also be
+        created / read from the current working directory or whatever has
+        imported the class (default) or, one may specify the desired
+        location when instantiating this class.  Note that this file requires
+        write access, so you may need to either adjust the file permissions if
+        using the default value.
 
-            API queries must be provided as a dict. object, see the execute_query
-            docstring for valid options.
-            '''
-            super(GoogleMCFQuery, self).__init__(scope, token_file_name, redirect)
-            self._service = self._init_service(secrets)
+        API queries must be provided as a dict. object, see the execute_query
+        docstring for valid options.
+        '''
+        super(GoogleMCFQuery, self).__init__(scope, token_file_name, redirect)
+        self._service = self._init_service(secrets)
 
     def execute_query(self, as_dict=False, **query):
         '''
@@ -589,7 +589,7 @@ class GoogleAnalyticsQueryV4(OAuthDataReaderV4):
         else:
             # re-cast query result (dict) to a pd.DataFrame object
             rows = len(res['rows'])
-            cols = [col['name'][4:] for col in res['columnHeaders']]
+            cols = [col['name'].replace('mcf:','') for col in res['columnHeaders']]
 
             try:
                 df = pd.DataFrame(np.array(\
@@ -621,7 +621,7 @@ class GoogleAnalyticsQueryV4(OAuthDataReaderV4):
                         return str
 
             for hdr in res['columnHeaders']:
-                col = hdr['name'][3:]
+                col = hdr['name'].replace('mcf:','')
                 dtp = hdr['dataType']
 
                 df[col] = df[col].apply(my_mapper(dtp))
