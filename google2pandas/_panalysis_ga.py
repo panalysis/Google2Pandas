@@ -481,7 +481,7 @@ class GoogleAnalyticsQueryV4(OAuthDataReaderV4):
             # Copy the dataframe to the returning object
             out = pd.concat((out, df), ignore_index=True)
             # Convert the object types to the inferred ones
-            out = out.convert_objects(convert_numeric=True)
+            out = out.apply(pd.to_numeric, errors='ignore', axis=1)
             # Explicitly convert date back to a date object
             if 'date' in out.columns:
                 out['date'] = pd.to_datetime(out['date'], format="%Y%m%d")
