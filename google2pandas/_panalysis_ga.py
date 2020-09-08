@@ -12,7 +12,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 from sys import stdout
 
 
-# from ._query_parser import QueryParser
+from ._query_parser import QueryParser
 
 no_callback = client.OOB_CALLBACK_URN
 default_scope = 'https://www.googleapis.com/auth/analytics.readonly'
