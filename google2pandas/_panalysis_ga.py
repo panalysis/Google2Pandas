@@ -1,5 +1,3 @@
-# from copy import deepcopy
-
 import pandas as pd
 import numpy as np
 
@@ -409,7 +407,6 @@ class GoogleAnalyticsQueryV4(OAuthDataReaderV4):
                 Reformatted response to **query.
         '''
         if all_results:
-            # qry = deepcopy(query)
             out = {'reports' : []}
 
             while True:
@@ -421,7 +418,6 @@ class GoogleAnalyticsQueryV4(OAuthDataReaderV4):
                     query['reportRequests'][0].update({'pageToken' : tkn})
 
                 else:
-
                     _ = query.pop('reportRequests')[0].get('pageToken')
                     break
 
