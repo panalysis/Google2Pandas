@@ -1,6 +1,6 @@
-
-
 import pandas as pd
+
+import re
 
 class QueryParser(object):
     '''
@@ -16,114 +16,131 @@ class QueryParser(object):
         '''
         query = {}
         query.update(kwargs)
-        
+
         # 1. Dates
         # The next two steps keep things consistent if the query is to be archived.
         try:
-            if query['start_date'][-7:] == 'daysAgo':
-                sd = pd.datetime.today() + \
-                    pd.tseries.offsets.DateOffset(days=-int(query['start_date'][:-7]))
-                query['start_date'] = sd.strftime('%Y-%m-%d')
-                
-            elif query['start_date'] == 'yesterday':
-                sd = pd.datetime.today() + pd.tseries.offsets.DateOffset(days=-1)
-                query['start_date'] = sd.strftime('%Y-%m-%d')
-                
-            elif query['start_date'] == 'today':
-                query['start_date'] = pd.datetime.today().strftime('%Y-%m-%d')
+             if query.get('start_date', '').endswith('daysAgo'):
+                ndays = int(re.sub(r'daysAgo', '', query.get('start_date')))
+                sday = pd.Timestamp('today') + pd.Timedelta(days=ndays)
+
+                query.update({
+                    'start_date' : sday.strftime('%Y-%m-%d')
+                })
+
+            elif query.get('start_date', '') == 'yesterday':
+                sday = pd.Timestamp('today') + pd.Timedelta(days=-1)
+
+                query.update({
+                    'start_date' : sday.strftime('%Y-%m-%d')
+                })
+
+            elif query.get('start_date', '') == 'today':
+                query.update({
+                    'start_date' : pd.Timestamp('today').strftime('%Y-%m-%d')
+                })
                 
             else:
-                query['start_date'] = pd.to_datetime(query['start_date'], \
-                    format='%Y-%m-%d').strftime('%Y-%m-%d')
-                
+                # force the formatting to a string YYYY-mm-dd
+                sday = pd.Timestamp(query.get('start_date')).strftime('%Y-%m-%d')
+                query.update({
+                    'start_date' : sday
+                })
+
         except (KeyError, AttributeError) as e:
             raise ValueError('The (required) \'start_date\' parameter is missing or invalid')
-            
-        try:
-            if (query['end_date'] is None) | (query['end_date'] == 'today'):
-                end_date = pd.datetime.today().strftime('%Y-%m-%d')
-                
-            else:
-                query['end_date'] = pd.to_datetime(query['end_date']).strftime('%Y-%m-%d')
-                
-        except KeyError:
-            query['end_date'] = pd.datetime.today().strftime('%Y-%m-%d')
-        
+
+        if (query.get('end_date') is None) | (query.get('end_date') == 'today'):
+            query.update({
+                'end_date' : pd.Timestamp('today').strftime('%Y-%m-%d')
+            })
+
+        else:
+            eday = pd.Timestamp(query.get('end_date')).strftime('%Y-%m-%d')
+            query.update({
+                'end_date' : eday
+            })
+
         # 2. Prefixing
         # Ensure that all fields that should be in the form 'prefix:XXXX' acutally are.
         # Error handling skipped at this location intentionally.
         #
         # First sneak in fix to allow providing ids as int value
-        query['ids'] = str(query['ids'])
+        query.update({
+            'ids' : str(query.get('ids', ''))
+        })
         
         # this is a bit rough, but I don't want to put in a defualt
         # empty value anywhere as it would be in confilct with the rest
         # of the methodology
         try:
-            names = 'ids', 'dimensions', 'metrics'
-            lst = query['ids'], query['dimensions'], query['metrics']
-            [self._maybe_add_arg(query, n, d) for n, d in zip(names, lst)]
+            names = ['ids', 'dimensions', 'metrics']
+            lst = [query.get(e) for e in names]
+            _ = [self._maybe_add_arg(query, n, d) for n, d in zip(names, lst)]
             
         except KeyError as e:
-            names = 'ids', 'metrics'
-            lst = query['ids'], query['metrics']
-            [self._maybe_add_arg(query, n, d) for n, d in zip(names, lst)]
+            names = ['ids', 'metrics']
+            lst = [query.get(e) for e in names]
+            _ = [self._maybe_add_arg(query, n, d) for n, d in zip(names, lst)]
         
         # 3. Clean up the filtering if present
-        try:
-            [self._maybe_add_filter_arg(query, n, d) \
-                for n, d in zip(['filters'], [query['filters']])]
-            
-        except KeyError:
-            pass
-        
+        _ = [self._maybe_add_filter_arg(query, n, d) \
+            for n, d in zip(['filters'], [query.get('filters', '')])]
+
         # 4. sorting
-        try:
-            [self._maybe_add_sort_arg(query, n, d) \
-                for n, d in zip(['sort'], [query['sort']])]
-            
-        except KeyError:
-            pass
-        
+        _ = [self._maybe_add_sort_arg(query, n, d) \
+                for n, d in zip(['sort'], [query.get('sort', '')])]
+
         # 5. start_index, max_results
-        try:
-            if query['start_index'] is not None:
-                query['start_index'] = str(query['start_index'])
-            
-        except KeyError:
-            pass
-        
-        try:
-            if query['max_results'] is not None:
-                query['max_results'] = str(query['max_results'])
-            
-        except KeyError:
-            pass
+        if query.get('start_index') is not None:
+            query.update({
+                'start_index' : str(query.get('start_index'))
+            })
+
+        if query.get('max_results') is not None:
+            query.update({
+                'max_results' : str(query.get('max_results'))
+            })
         
         # 6. samplingLevel
-        try:
-            if query['samplingLevel'] is not None:
-                query['samplingLevel'] = query['samplingLevel'].upper()
-                
-                if query['samplingLevel'].upper() not in ['DEFAULT', 'FASTER', 'HIGHER_PRECISION']:
-                    query.pop('samplingLevel')
-                    
-                    print('Invalid value for \'samplingLevel\' specified, using \'DEFAULT\' instead')
-                    
-                    
-        except KeyError:
-            pass
-        
+        if query.get('samplingLevel') is not None:
+            lvl = query.get('samplingLevel').upper()
+
+            if lvl not in ['DEFAULT', 'FASTER', 'HIGHER_PRECISION']:
+                print('Invalid value for \'samplingLevel\' specified, using \'DEFAULT\' instead')
+
+                lvl = 'DEFAULT'
+
+            query.update({
+                'samplingLevel' : lvl
+            })
+
         # 7. Remove options that should not be there
-        for key in list(query.keys()):
-            if key not in ['ids', 'start_date', 'end_date', 'metrics', \
-                            'dimensions', 'sort', 'filters', 'segment', \
-                            'samplingLevel', 'start_index', 'max_results', \
-                            'output', 'fields', 'userIp', 'quotaUser']:
-                query.pop(key)
-                
-                print(('Removed invalid query parameter \'{0}\''.format(key)))
-        
+        valid_params =  {
+            'ids',
+            'start_date',
+            'end_date',
+            'metrics',
+            'dimensions',
+            'sort',
+            'filters',
+            'segment',
+            'samplingLevel',
+            'start_index',
+            'max_results',
+            'output',
+            'fields',
+            'userIp',
+            'quotaUser'}
+
+        temp = set(query).difference(valid_params)
+
+        if any(temp):
+            for key in temp:
+                _ = query.pop(key)
+
+                print(f'Removed invalid query parameter \'{key}\'')
+
         # Nothing to do for 'segment' actually as it's too fleixible to
         # fix into this fix-via-intuition framework, at least I'm not seeing
         # anything obvious. For now, the user has to get it correct.
@@ -149,8 +166,9 @@ class QueryParser(object):
         if data is not None:
             if isinstance(data, (pd.compat.string_types, int)):
                 data = [data]
-            data = ','.join(['{0}{1}'.format(prefix, x) if x[:d] != prefix \
-                    else x for x in data])
+            data = ','.join(
+                    [f'{prefix}{x}' if x[:d] != prefix else x for x in data]
+                )
             
             query[field] = data
             

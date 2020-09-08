@@ -1,16 +1,18 @@
+# from copy import deepcopy
 
+import pandas as pd
+import numpy as np
+
+import httplib2
+import os
 
 from googleapiclient.discovery import build
 from oauth2client import client, file, tools
 from oauth2client.service_account import ServiceAccountCredentials
 from sys import stdout
-from copy import deepcopy
 
-import pandas as pd
-import numpy as np
-import httplib2, os
 
-from ._query_parser import QueryParser
+# from ._query_parser import QueryParser
 
 no_callback = client.OOB_CALLBACK_URN
 default_scope = 'https://www.googleapis.com/auth/analytics.readonly'
@@ -20,7 +22,7 @@ default_secrets_v3 = os.path.join(os.path.dirname(__file__), 'client_secrets_v3.
 default_secrets_v4 = os.path.join(os.path.dirname(__file__), 'client_secrets_v4.json')
 
 
-class OAuthDataReaderV4(object):
+class OAuthDataReaderV4:
     '''
     Abstract class for handling OAuth2 authentication using the Google
     oauth2client library and the V4 Analytics API
@@ -37,22 +39,27 @@ class OAuthDataReaderV4(object):
             discovery_uri : tuple or string
                 Designates discovery uri(s)
         '''
-        self._scope_ = scope
-        self._discovery_ = discovery_uri
-        self._api_ = 'v4'
+        self._scope = scope
+        self._discovery = discovery_uri
+        self._api = 'v4'
 
     def _init_service(self, secrets):
-        creds = ServiceAccountCredentials.from_json_keyfile_name(secrets,
-                                                                 scopes=self._scope_)
+        creds = ServiceAccountCredentials\
+            .from_json_keyfile_name(secrets,
+                scopes=self._scope
+            )
 
         http = creds.authorize(httplib2.Http())
 
-        return build('analytics',
-                     self._api_,
-                     http=http,
-                     discoveryServiceUrl=self._discovery_)
+        # silence log warnigns as suggested by
+        # https://github.com/googleapis/google-api-python-client/issues/299
+        return build('analytics', self._api,
+            http=http,
+            discoveryServiceUrl=self._discovery,
+            cache_discovery=False
+        )
 
-class OAuthDataReader(object):
+class OAuthDataReader:
     '''
     Abstract class for handling OAuth2 authentication using the Google
     oauth2client library
@@ -68,10 +75,10 @@ class OAuthDataReader(object):
             redirect : str
                 Redirect URL
         '''
-        self._scope_ = scope
-        self._redirect_url_ = redirect
-        self._token_store_ = file.Storage(token_file_name)
-        self._api_ = 'v3'
+        self._scope = scope
+        self._redirect_url = redirect
+        self._token_store = file.Storage(token_file_name)
+        self._api = 'v3'
 
         # NOTE:
         # This is a bit rough...
@@ -93,10 +100,10 @@ class OAuthDataReader(object):
         '''
         flow = self._create_flow(secrets)
 
-        credentials = self._token_store_.get()
+        credentials = self._token_store.get()
 
         if credentials is None or credentials.invalid:
-            credentials = tools.run_flow(flow, self._token_store_, self._flags_)
+            credentials = tools.run_flow(flow, self._token_store, self._flags_)
 
         http = credentials.authorize(http=httplib2.Http())
 
@@ -116,7 +123,7 @@ class OAuthDataReader(object):
         See google documentation for format of secrets file
         '''
         flow = client.flow_from_clientsecrets(secrets,
-                                              scope=self._scope_,
+                                              scope=self._scope,
                                               message=tools.message_if_missing(secrets))
 
         return flow
@@ -128,7 +135,7 @@ class OAuthDataReader(object):
         '''
         http = self._authenticate(secrets)
 
-        return build('analytics', self._api_, http=http)
+        return build('analytics', self._api, http=http)
 
     def _reset_default_token_store(self):
         os.remove(default_token_file)
@@ -253,7 +260,7 @@ class GoogleAnalyticsQuery(OAuthDataReader):
             ga_query = self._service.data().ga().get(**formatted_query)
 
         except TypeError as e:
-            raise ValueError('Error making query: {0}'.format(e))
+            raise ValueError(f'Error making query: {e}')
 
         res = ga_query.execute()
 
@@ -402,18 +409,20 @@ class GoogleAnalyticsQueryV4(OAuthDataReaderV4):
                 Reformatted response to **query.
         '''
         if all_results:
-            qry = deepcopy(query)
+            # qry = deepcopy(query)
             out = {'reports' : []}
 
             while True:
-                response = self._service.reports().batchGet(body=qry).execute()
-                out['reports'] = out['reports'] + response['reports']
+                response = self._service.reports().batchGet(body=query).execute()
+                out['reports'] += response['reports']
 
                 tkn = response.get('reports', [])[0].get('nextPageToken', '')
                 if tkn:
-                    qry['reportRequests'][0].update({'pageToken' : tkn})
+                    query['reportRequests'][0].update({'pageToken' : tkn})
 
                 else:
+
+                    _ = query.pop('reportRequests')[0].get('pageToken')
                     break
 
         else:
@@ -431,34 +440,39 @@ class GoogleAnalyticsQueryV4(OAuthDataReaderV4):
         out = pd.DataFrame()
         # GA data type to data frame conversion
         lookup = {
-          "INTEGER": "int32",
-          "FLOAT": "float32",
-          "CURRENCY": "float32",
-          "PERCENT": "float32",
-          "TIME": "object",
-          "STRING": "object"
+          'INTEGER'     : 'int32',
+          'FLOAT'       : 'float32',
+          'CURRENCY'    : 'float32',
+          'PERCENT'     : 'float32',
+          'TIME'        : 'object',
+          'STRING'      : 'object'
         }
 
         # Loop through reports and get metrics and dimensions
         for report in resp.get('reports', []):
             col_hdrs = report.get('columnHeader', {})
             # Get the initial dimensions
-            cols = col_hdrs['dimensions']
+            cols = col_hdrs.get('dimensions', [])
             metric_cols = []
-            if 'metricHeader' in list(col_hdrs.keys()):
+
+            if 'metricHeader' in col_hdrs:
                 metrics = col_hdrs.get('metricHeader', {}).get('metricHeaderEntries', [])
                 cols_data_type = {}
+
                 for m in metrics:
                     # Get each metric and the data type
-                    cols = cols + [m.get('name')]
+                    cols += [m.get('name')]
                     cols_data_type[m.get('name')] = lookup[m.get('type')]
 
             # Take out any "ga:" prefixes
-            cols = list(map(lambda x: x.replace("ga:", ""), cols))
+            cols = list(map(lambda x: x.replace('ga:', ''), cols))
+
             # Set the dataframe with the column names
             df = pd.DataFrame(columns=cols)
+
             # Get the rows from the GA report
             rows = report.get('data', {}).get('rows')
+
             # Let's loop through the rows to get the dimensions and metrics to row list
             for row in rows:
                 row_list = row.get('dimensions', [])
@@ -480,163 +494,178 @@ class GoogleAnalyticsQueryV4(OAuthDataReaderV4):
 
             # Copy the dataframe to the returning object
             out = pd.concat((out, df), ignore_index=True)
+
             # Convert the object types to the inferred ones
             out = out.apply(pd.to_numeric, errors='ignore', axis=1)
+
             # Explicitly convert date back to a date object
             if 'date' in out.columns:
-                out['date'] = pd.to_datetime(out['date'], format="%Y%m%d")
+                out['date'] = pd.to_datetime(out['date'], format='%Y%m%d')
 
         return out
 
 
 
-class GoogleMCFQuery(OAuthDataReader):
-    def __init__(self,
-                 scope=default_scope,
-                 token_file_name=default_token_file,
-                 redirect=no_callback,
-                 secrets=default_secrets_v3):
-        '''
-        Query the MCF API with ease!  Simply obtain the 'client_secrets.json' file
-        as usual and move it to the same directory as this file (default) or
-        specify the file location when instantiating this class.
 
-        If one does not exist, an 'analytics.dat' token file will also be
-        created / read from the current working directory or whatever has
-        imported the class (default) or, one may specify the desired
-        location when instantiating this class.  Note that this file requires
-        write access, so you may need to either adjust the file permissions if
-        using the default value.
+# UPDATE 2020-09-08:
+#   I don't think this class should actully be here; if this even works anymore,
+#   the more usefult thing to do is something like:
+#
+#   class MyExtendedClass(OAuthDataReader):
+#       def __init__(self, *args, **kwargs):
+#           super().__init__(*args)
+#
+#   and define your methods as required.
+#
+#
+#
+# class GoogleMCFQuery(OAuthDataReader):
+#     def __init__(self,
+#                  scope=default_scope,
+#                  token_file_name=default_token_file,
+#                  redirect=no_callback,
+#                  secrets=default_secrets_v3):
+#         '''
+#         Query the MCF API with ease!  Simply obtain the 'client_secrets.json' file
+#         as usual and move it to the same directory as this file (default) or
+#         specify the file location when instantiating this class.
 
-        API queries must be provided as a dict. object, see the execute_query
-        docstring for valid options.
-        '''
-        super(GoogleMCFQuery, self).__init__(scope, token_file_name, redirect)
-        self._service = self._init_service(secrets)
+#         If one does not exist, an 'analytics.dat' token file will also be
+#         created / read from the current working directory or whatever has
+#         imported the class (default) or, one may specify the desired
+#         location when instantiating this class.  Note that this file requires
+#         write access, so you may need to either adjust the file permissions if
+#         using the default value.
 
-    def execute_query(self, as_dict=False, **query):
-        '''
-        Execute **query and translate it to a pandas.DataFrame object.
+#         API queries must be provided as a dict. object, see the execute_query
+#         docstring for valid options.
+#         '''
+#         super(GoogleMCFQuery, self).__init__(scope, token_file_name, redirect)
+#         self._service = self._init_service(secrets)
 
-        Parameters:
-        -----------
-            as_dict : Boolean
-                return the dict object provided by MCF instead of the DataFrame
-                object. Default = False
-            query : dict.
-                MCF query, only with some added flexibility to be a bit sloppy. Adapted from
-                https://developers.google.com/analytics/devguides/reporting/mcf/v3/reference
-                The valid keys are:
+#     def execute_query(self, as_dict=False, **query):
+#         '''
+#         Execute **query and translate it to a pandas.DataFrame object.
 
-            Key         Value   Reqd.   Summary
-            --------------------------------------------------------------------------------
-            ids         int     Y       The unique table ID of the form ga:XXXX or simply
-                                        XXXX, where XXXX is the Analytics view (profile)
-                                        ID for which the  query will retrieve the data.
-            start_date  str     Y       Start date for fetching Analytics data. Requests can
-                                        specify a start date formatted as YYYY-MM-DD, or as
-                                        a relative date (e.g., today, yesterday, or NdaysAgo
-                                        where N is a positive integer).
-            end_date    str     Y       End date for fetching Analytics data. Request can
-                                        specify an end date formatted as YYYY-MM-DD, or as
-                                        a relative date (e.g., today, yesterday, or NdaysAgo
-                                        where N is a positive integer).
-            metrics     list    Y       A list of comma-separated metrics, such as
-                                        'ga:sessions', 'ga:bounces', or simply 'sessions', etc.
-            dimensions  list    N       A list of comma-separated dimensions for your
-                                        Analytics data, such as 'ga:browser', 'ga:city',
-                                        or simply 'browser', etc.
-            sort        list    N       A list of comma-separated dimensions and metrics
-                                        indicating the sorting order and sorting direction
-                                        for the returned data.
-            filters     list    N       Dimension or metric filters that restrict the data
-                                        returned for your request. Multiple filters must
-                                        be connected with 'and' or 'or' entries, with no
-                                        default behaviour prescribed.
-            samplingLevel str   N       The desired sampling level. Allowed Values:
-                                        'DEFAULT' - Returns response with a sample size that
-                                                    balances speed and accuracy.
-                                        'FASTER' -  Returns a fast response with a smaller
-                                                    sample size.
-                                        'HIGHER_PRECISION' - Returns a more accurate response
-                                                    using a large sample size, but this may
-                                                    result in the response being slower.
-            start_index int     N       The first row of data to retrieve, starting at 1.
-                                        Use this parameter as a pagination mechanism along
-                                        with the max-results parameter.
-            max_results int     N       The maximum number of rows to include in the response.
+#         Parameters:
+#         -----------
+#             as_dict : Boolean
+#                 return the dict object provided by MCF instead of the DataFrame
+#                 object. Default = False
+#             query : dict.
+#                 MCF query, only with some added flexibility to be a bit sloppy. Adapted from
+#                 https://developers.google.com/analytics/devguides/reporting/mcf/v3/reference
+#                 The valid keys are:
 
-        Returns:
-        -----------
-            result : pd.DataFrame or dict
-            metadata : summary data supplied with query result
-        '''
-        try:
-            formatted_query = QueryParser(prefix='mcf:').parse(**query)
+#             Key         Value   Reqd.   Summary
+#             --------------------------------------------------------------------------------
+#             ids         int     Y       The unique table ID of the form ga:XXXX or simply
+#                                         XXXX, where XXXX is the Analytics view (profile)
+#                                         ID for which the  query will retrieve the data.
+#             start_date  str     Y       Start date for fetching Analytics data. Requests can
+#                                         specify a start date formatted as YYYY-MM-DD, or as
+#                                         a relative date (e.g., today, yesterday, or NdaysAgo
+#                                         where N is a positive integer).
+#             end_date    str     Y       End date for fetching Analytics data. Request can
+#                                         specify an end date formatted as YYYY-MM-DD, or as
+#                                         a relative date (e.g., today, yesterday, or NdaysAgo
+#                                         where N is a positive integer).
+#             metrics     list    Y       A list of comma-separated metrics, such as
+#                                         'ga:sessions', 'ga:bounces', or simply 'sessions', etc.
+#             dimensions  list    N       A list of comma-separated dimensions for your
+#                                         Analytics data, such as 'ga:browser', 'ga:city',
+#                                         or simply 'browser', etc.
+#             sort        list    N       A list of comma-separated dimensions and metrics
+#                                         indicating the sorting order and sorting direction
+#                                         for the returned data.
+#             filters     list    N       Dimension or metric filters that restrict the data
+#                                         returned for your request. Multiple filters must
+#                                         be connected with 'and' or 'or' entries, with no
+#                                         default behaviour prescribed.
+#             samplingLevel str   N       The desired sampling level. Allowed Values:
+#                                         'DEFAULT' - Returns response with a sample size that
+#                                                     balances speed and accuracy.
+#                                         'FASTER' -  Returns a fast response with a smaller
+#                                                     sample size.
+#                                         'HIGHER_PRECISION' - Returns a more accurate response
+#                                                     using a large sample size, but this may
+#                                                     result in the response being slower.
+#             start_index int     N       The first row of data to retrieve, starting at 1.
+#                                         Use this parameter as a pagination mechanism along
+#                                         with the max-results parameter.
+#             max_results int     N       The maximum number of rows to include in the response.
 
-            mcf_query = self._service.data().mcf().get(**formatted_query)
+#         Returns:
+#         -----------
+#             result : pd.DataFrame or dict
+#             metadata : summary data supplied with query result
+#         '''
+#         try:
+#             formatted_query = QueryParser(prefix='mcf:').parse(**query)
 
-        except TypeError as e:
-            raise ValueError('Error making query: {0}'.format(e))
+#             mcf_query = self._service.data().mcf().get(**formatted_query)
 
-        res = mcf_query.execute()
+#         except TypeError as e:
+#             raise ValueError(f'Error making query: {e}')
 
-        # Fix the 'query' field to be useful to us
-        for key in list(res['query'].keys()):
-            res['query'][key.replace('-', '_')] = res['query'].pop(key)
+#         res = mcf_query.execute()
 
-        if as_dict:
-            return res
+#         # Fix the 'query' field to be useful to us
+#         for key in list(res['query'].keys()):
+#             res['query'][key.replace('-', '_')] = res['query'].pop(key)
 
-        else:
-            # re-cast query result (dict) to a pd.DataFrame object
-            rows = len(res['rows'])
-            cols = [col['name'].replace('mcf:','') for col in res['columnHeaders']]
+#         if as_dict:
+#             return res
 
-            try:
-                df = pd.DataFrame(np.array(\
-                        [list(i.values()) for row in res['rows'] for i in row]).\
-                            reshape(rows, len(cols)), columns=cols)
+#         else:
+#             # re-cast query result (dict) to a pd.DataFrame object
+#             rows = len(res['rows'])
+#             cols = [col['name'].replace('mcf:','') for col in res['columnHeaders']]
 
-            except KeyError:
-                df = pd.DataFrame(columns=cols)
-                pass
+#             try:
+#                 df = pd.DataFrame(np.array(\
+#                         [list(i.values()) for row in res['rows'] for i in row]).\
+#                             reshape(rows, len(cols)), columns=cols)
 
-            # TODO:
-            # A tool to accurtely set the dtype for all columns of df would
-            # be nice, but is probably far more effort than it's worth.
-            # This will get the ball rolling, but the end user is likely
-            # going to be stuck dealing with things on a per-case basis.
-            # We should be able to leverage the resp2frame code above to 
-            # improve the the handling of conversion here.
-            def my_mapper(x):
-                if x == 'INTEGER':
-                    return int
-                elif x == 'CURRENCY':
-                    return float
-                elif x == 'BOOLEAN':
-                    return bool
-                else:
-                    # this should work with both 2.7 and 3.4
-                    if isinstance(x, str):
-                        return str
+#             except KeyError:
+#                 df = pd.DataFrame(columns=cols)
+#                 pass
 
-                    else:
-                        return str
+#             # TODO:
+#             # A tool to accurtely set the dtype for all columns of df would
+#             # be nice, but is probably far more effort than it's worth.
+#             # This will get the ball rolling, but the end user is likely
+#             # going to be stuck dealing with things on a per-case basis.
+#             # We should be able to leverage the resp2frame code above to 
+#             # improve the the handling of conversion here.
+#             def my_mapper(x):
+#                 if x == 'INTEGER':
+#                     return int
+#                 elif x == 'CURRENCY':
+#                     return float
+#                 elif x == 'BOOLEAN':
+#                     return bool
+#                 else:
+#                     # this should work with both 2.7 and 3.4
+#                     if isinstance(x, str):
+#                         return str
 
-            for hdr in res['columnHeaders']:
-                col = hdr['name'].replace('mcf:','')
-                dtp = hdr['dataType']
+#                     else:
+#                         return str
 
-                df[col] = df[col].apply(my_mapper(dtp))
+#             for hdr in res['columnHeaders']:
+#                 col = hdr['name'].replace('mcf:','')
+#                 dtp = hdr['dataType']
 
-            # Return the summary info as well
-            try:
-                res.pop('rows')
+#                 df[col] = df[col].apply(my_mapper(dtp))
 
-            except KeyError:
-                pass
+#             # Return the summary info as well
+#             try:
+#                 res.pop('rows')
 
-            res.pop('columnHeaders')
+#             except KeyError:
+#                 pass
 
-            return df, res
+#             res.pop('columnHeaders')
+
+#             return df, res
