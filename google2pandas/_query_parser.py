@@ -20,7 +20,7 @@ class QueryParser(object):
         # 1. Dates
         # The next two steps keep things consistent if the query is to be archived.
         try:
-             if query.get('start_date', '').endswith('daysAgo'):
+            if query.get('start_date', '').endswith('daysAgo'):
                 ndays = int(re.sub(r'daysAgo', '', query.get('start_date')))
                 sday = pd.Timestamp('today') + pd.Timedelta(days=ndays)
 
