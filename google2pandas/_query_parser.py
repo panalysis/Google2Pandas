@@ -164,7 +164,7 @@ class QueryParser(object):
         d = len(prefix)
             
         if data is not None:
-            if isinstance(data, (pd.compat.string_types, int)):
+            if isinstance(data, (str, int)):
                 data = [data]
             data = ','.join(
                     [f'{prefix}{x}' if x[:d] != prefix else x for x in data]
@@ -175,7 +175,7 @@ class QueryParser(object):
     def _maybe_add_sort_arg(self, query, field, data):
         d = len(self.prefix)
         if data is not None:
-            if isinstance(data, (pd.compat.string_types, int)):
+            if isinstance(data, (str, int)):
                 data = [data]
                 
             def _prefix(item):
@@ -199,7 +199,7 @@ class QueryParser(object):
     def _maybe_add_filter_arg(self, query, field, data):
         d = len(self.prefix)
         if data is not None:
-            if isinstance(data, (pd.compat.string_types, int)):
+            if isinstance(data, (str, int)):
                 data = [data]
                 
             def _prefix(item):
